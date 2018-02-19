@@ -8,9 +8,9 @@ class YourSql {
 	}
 
 
-	init({ host, user, password, database, debug }) {
+	init({ host, user, password, database, connectionLimit, debug }) {
 		this.pool = this.mysql.createPool({
-			connectionLimit: 100, //important
+			connectionLimit: connectionLimit || 100,
 			host: host,
 			user: user,
 			password: password,
