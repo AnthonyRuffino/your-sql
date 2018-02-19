@@ -1,0 +1,26 @@
+{
+  "name": "your-sql",
+  "version": "1.0.0",
+  "description": "Helper methods for MySql database connections.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnthonyRuffino/your-sql.git"
+  },
+  "keywords": [
+    "mysql",
+    "ddl"
+  ],
+  "author": "Anthony Ruffino",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AnthonyRuffino/your-sql/issues"
+  },
+  "homepage": "https://github.com/AnthonyRuffino/your-sql#readme",
+  "dependencies": {
+    "mysql": "2.10.2"
+  }
+}
