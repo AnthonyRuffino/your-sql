@@ -7,7 +7,6 @@ class YourSql {
 		this.pool = null;
 	}
 
-
 	init({ host, user, password, database, connectionLimit, debug, verbose }) {
 		this.pool = this.mysql.createPool({
 			connectionLimit: connectionLimit || 100,
@@ -132,10 +131,11 @@ class YourSql {
 				err: message
 			});
 			return;
-		} else {
+		}
+		else {
 			this.log('SQL STATEMENT: ' + sql);
 		}
-		
+
 		try {
 			this.pool.getConnection((err, connection) => {
 				connection.release();
