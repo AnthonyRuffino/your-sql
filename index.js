@@ -8,14 +8,14 @@ class YourSql {
 	}
 
 
-	init({ host, user, password, database, connectionLimit, debug }) {
+	init({ host, user, password, database, connectionLimit, debug, verbose }) {
 		this.pool = this.mysql.createPool({
 			connectionLimit: connectionLimit || 100,
 			host: host,
 			user: user,
 			password: password,
 			database: database,
-			debug: debug
+			debug: debug && verbose
 		});
 	}
 
@@ -49,7 +49,7 @@ class YourSql {
 				if (!err) {
 					if (!this.hasResults(rows)) {
 						this.log('Begin create schema ' + database);
-						connection.query('CREATE SCHEMA ' + database, function(err, rows) {
+						connection.query('CREATE SCHEMA ' + database, (err, rows) => {
 							connection.release();
 							if (err) {
 								this.log('Error creating schema ' + database, err);
@@ -125,11 +125,15 @@ class YourSql {
 
 
 	query(sql, callback) {
-		if (sql !== undefined && sql !== null && sql.length > 0) {
+		if (sql === undefined || sql === null || sql.length < 1) {
+			const message = '"sql" paremeter was not provided';
+			this.log(message);
 			callback({
-				err: '"sql" paremeter was not provided'
+				err: message
 			});
 			return;
+		} else {
+			this.log('SQL STATEMENT: ' + sql);
 		}
 		
 		try {
