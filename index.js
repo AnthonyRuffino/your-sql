@@ -17,6 +17,14 @@ class YourSql {
 			debug: debug && verbose
 		});
 	}
+	
+	handleConnectionError(connection, callback) {
+	    connection.on('error', function(err) {
+			this.log('Error during while connecting to database.', err);
+			callback(err);
+			return;
+		});
+	}
 
 
 	hasResults(rows) {
@@ -35,68 +43,216 @@ class YourSql {
 		}
 	}
 
-	createDatabase(database, callback) {
-		this.pool.getConnection((err, connection) => {
-			if (err) {
-				this.log('Error in connection to database', err);
-				callback(err);
-			}
-
-			this.log('connected as id ' + connection.threadId);
-
-			connection.query(`SHOW DATABASES LIKE '${database}'`, (err, rows) => {
-				if (!err) {
+	createDatabase(database) {
+		return new Promise((resolve, reject) => {
+			this.pool.getConnection((err, connection) => {
+				if (err) {
+					this.log('Error in connection to database', err);
+					reject(err);
+					return;
+				}
+	
+				this.log('connected as id ' + connection.threadId);
+	
+				connection.query(`SHOW DATABASES LIKE '${database}'`, (err, rows) => {
+					if (!err) {
+						if (!this.hasResults(rows)) {
+							this.log('Begin create schema ' + database);
+							connection.query('CREATE SCHEMA ' + database, (err, rows) => {
+								connection.release();
+								if (err) {
+									this.log('Error creating schema ' + database, err);
+									reject(err);
+								}
+								else {
+									this.log('Done creating schema - ' + database);
+									resolve(rows);
+								}
+							});
+						}
+						else {
+							reject('Schema already exists: ' + database);
+						}
+					}
+					else {
+						connection.release();
+						this.log('Error checking for schema: ' + database, err);
+						reject(err);
+					}
+	
+				});
+	
+				this.handleConnectionError(connection);
+			});
+		});
+	}
+	
+	
+	
+	createUser(username, host, password) {
+		return new Promise((resolve, reject) => {
+            this.pool.getConnection((err, connection) => {
+				if (err) {
+					this.log('Error in connection to database', err);
+					reject(err);
+				}
+	
+				this.log('connected as id ' + connection.threadId);
+	
+				connection.query(`SELECT User, Host FROM mysql.user where User = '${username}' and Host = '${host}'`, (err, rows) => {
+					if (err) {
+					    connection.release();
+						this.log(`Error checking for user: ${username}@${host}`);
+						reject(err);
+						return;
+					}
 					if (!this.hasResults(rows)) {
-						this.log('Begin create schema ' + database);
-						connection.query('CREATE SCHEMA ' + database, (err, rows) => {
+						this.log(`Begin create user: ${username}@${host}`);
+						const identifiedBy = password !== undefined && password !== null ? ` IDENTIFIED BY '${password}'` : '';
+						connection.query(`CREATE USER '${username}'@'${host}'${identifiedBy}`, (err, rows) => {
 							connection.release();
 							if (err) {
-								this.log('Error creating schema ' + database, err);
-								callback(err);
+								this.log(`Error creating user: ${username}@${host}`, err);
+								reject(err);
 							}
 							else {
-								this.log('Done creating schema - ' + database);
-								callback(null, rows);
+								this.log(`Done creating user: ${username}@${host}`);
+								resolve(rows);
 							}
 						});
 					}
 					else {
-						const msg = 'Schema already exists: ' + database;
-						callback('Schema already exists: ' + database);
+						reject(`User already exists: ${username}@${host}`);
 					}
-				}
-				else {
-					connection.release();
-					this.log('Error creating checking for schema: ' + database, err);
-					callback(err);
-				}
-
+	
+				});
+				this.handleConnectionError(connection);
 			});
-
-			connection.on('error', function(err) {
-				this.log('Error during while connecting to database.', err);
-				return;
+        });
+		
+	}
+	
+	
+	
+	grantAllCrudRightsToUserOnDatabase(username, host, database) {
+		return new Promise((resolve, reject) => {
+			this.pool.getConnection((err, connection) => {
+				if (err) {
+					this.log('Error in connection to database', err);
+					reject(err);
+				}
+	
+				this.log('connected as id ' + connection.threadId);
+	
+				connection.query(`SELECT User, Host FROM mysql.user where User = '${username}' and Host = '${host}'`, (err, rows) => {
+				    if(err) {
+				        connection.release();
+						this.log(`Error checking for user: ${username}@${host}`);
+						reject(err);
+						return;
+				    }
+				    
+					if (!this.hasResults(rows)) {
+						reject(`User does not exist exists: ${username}@${host}`);
+						return;
+					}
+					
+					connection.query(`SHOW DATABASES LIKE '${database}'`, (err, rows) => {
+					    if(err) {
+					        connection.release();
+	    					this.log('Error checking for schema: ' + database, err);
+	    					reject(err);
+	    					return;
+					    }
+					    
+						if (!this.hasResults(rows)) {
+							reject('Schema does not exist: ' + database);
+							return;
+						}
+						
+						const grantStatement = `GRANT SELECT,INSERT,UPDATE,DELETE ON ${database}.* TO '${username}'@'${host}'`;
+						connection.query(grantStatement, (err, rows) => {
+							connection.release();
+							if (err) {
+								this.log(`Error granting rights: ${grantStatement}`, err);
+								reject(err);
+							}
+							else {
+								this.log(`Rights granted: ${grantStatement}`);
+								resolve(rows);
+							}
+						});
+	    
+	    			});
+	
+				});
+				this.handleConnectionError(connection);
+			});
+		});
+		
+	}
+	
+	changeUserPassword(username, host, newPassword, callback) {
+		return new Promise((resolve, reject) => {
+			this.pool.getConnection((err, connection) => {
+				if (err) {
+					this.log('Error in connection to database', err);
+					reject(err);
+				}
+	
+				this.log('connected as id ' + connection.threadId);
+	
+				connection.query(`SELECT User, Host FROM mysql.user where User = '${username}' and Host = '${host}'`, (err, rows) => {
+				    if(err) {
+				        connection.release();
+						this.log(`Error checking for user: ${username}@${host}`);
+						reject(err);
+						return;
+				    }
+				    
+					if (!this.hasResults(rows)) {
+						reject(`User does not exist exists: ${username}@${host}`);
+						return;
+					}
+					
+					connection.query(`SET PASSWORD FOR '${username}'@'${host}' = PASSWORD('${newPassword}')`, (err, rows) => {
+						connection.release();
+						if (err) {
+							this.log(`Set password failed: SET PASSWORD FOR '${username}'@'${host}' `, err);
+							reject(err);
+						}
+						else {
+							this.log(`Done setting password: SET PASSWORD FOR '${username}'@'${host}'`);
+							resolve(rows);
+						}
+					});
+				});
+	
+				this.handleConnectionError(connection);
 			});
 		});
 	}
 
 
 	getSchemaSizeInMb(schema, callback) {
-		var sizeQuery = 'SELECT Round(Sum(data_length + index_length) / 1024 / 1024, 1) "mb" FROM information_schema.tables WHERE table_schema = "' + schema + '"';
-		this.query(sizeQuery, function(err, results) {
-			if (err) {
-				this.log('Error querying schema size', err);
-				callback(err);
-			}
-			else {
-				if (results === undefined || results === null || results.results === undefined || results.results === null || results.results[0] === undefined || results.results[0] === null) {
-					callback('No results for schema ' + schema);
+		return new Promise((resolve, reject) => {
+			var sizeQuery = 'SELECT Round(Sum(data_length + index_length) / 1024 / 1024, 1) "mb" FROM information_schema.tables WHERE table_schema = "' + schema + '"';
+			this.query(sizeQuery, function(err, results) {
+				if (err) {
+					this.log('Error querying schema size', err);
+					reject(err);
 				}
 				else {
-					callback(null, results.results[0].mb);
+					if (results === undefined || results === null || results.results === undefined || results.results === null || results.results[0] === undefined || results.results[0] === null) {
+						reject('No results for schema ' + schema);
+					}
+					else {
+						resolve(results.results[0].mb);
+					}
 				}
-			}
-		})
+			})
+		});
+		
 	}
 
 
