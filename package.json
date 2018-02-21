@@ -1,6 +1,6 @@
 {
   "name": "your-sql",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Helper methods for MySql database connections.",
   "main": "index.js",
   "scripts": {
