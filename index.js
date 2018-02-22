@@ -333,4 +333,6 @@ class YourSql {
 	}
 }
 
-exports.YourSql = YourSql;
+module.exports = function() {
+	return new YourSql();
+}
