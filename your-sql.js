@@ -19,7 +19,7 @@ class YourSql {
 	}
 	
 	handleConnectionError(connection, callback) {
-	    connection.on('error', function(err) {
+	    connection.on('error', (err) => {
 			this.log('Error during while connecting to database.', err);
 			callback(err);
 			return;
@@ -237,7 +237,7 @@ class YourSql {
 	getSchemaSizeInMb(schema, callback) {
 		return new Promise((resolve, reject) => {
 			var sizeQuery = 'SELECT Round(Sum(data_length + index_length) / 1024 / 1024, 1) "mb" FROM information_schema.tables WHERE table_schema = "' + schema + '"';
-			this.query(sizeQuery, function(err, results) {
+			this.query(sizeQuery, (err, results) => {
 				if (err) {
 					this.log('Error querying schema size', err);
 					reject(err);
