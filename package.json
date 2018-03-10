@@ -2,7 +2,7 @@
   "name": "your-sql",
   "version": "1.0.5",
   "description": "Helper methods for MySql database connections.",
-  "main": "index.js",
+  "main": "your-sql.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
