@@ -21,6 +21,6 @@
   },
   "homepage": "https://github.com/AnthonyRuffino/your-sql#readme",
   "dependencies": {
-    "mysql": "2.16.2"
+    "mysql": "2.16.0"
   }
 }
