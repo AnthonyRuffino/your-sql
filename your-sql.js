@@ -7,15 +7,8 @@ class YourSql {
 		this.pool = null;
 	}
 
-	init({ host, user, password, database, connectionLimit, debug, verbose }) {
-		this.pool = this.mysql.createPool({
-			connectionLimit: connectionLimit || 100,
-			host: host,
-			user: user,
-			password: password,
-			database: database,
-			debug: debug && verbose
-		});
+	init(config) {
+		this.pool = this.mysql.createPool(config);
 	}
 	
 	handleConnectionError(connection, callback) {
