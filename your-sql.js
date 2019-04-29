@@ -14,7 +14,7 @@ class YourSql {
 	handleConnectionError(connection, callback) {
 	    connection.on('error', (err) => {
 			this.log('Error during while connecting to database.', err);
-			callback(err);
+			callback && callback(err);
 			return;
 		});
 	}
